@@ -402,7 +402,7 @@ class HomeFragment : Fragment() {
 
     private fun playSong(song: Song) {
         val serviceIntent = android.content.Intent(requireContext(), MusicService::class.java)
-        serviceIntent.putExtra("song", song)
+        serviceIntent.putExtra("song_id", song.id)
         requireContext().startForegroundService(serviceIntent)
 
         showMiniPlayer(song, true)

@@ -9,6 +9,7 @@ import android.os.IBinder
 import android.util.DisplayMetrics
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -17,6 +18,7 @@ import com.dezzmusic.databinding.ActivityPlayerBinding
 import com.dezzmusic.db.Song
 import com.dezzmusic.music.MusicService
 import com.dezzmusic.MusicRepository
+import kotlin.math.min
 import kotlinx.coroutines.*
 
 class PlayerActivity : AppCompatActivity() {
@@ -76,10 +78,10 @@ class PlayerActivity : AppCompatActivity() {
         // Adjust layout based on screen size
         if (isTablet) {
             // Tablet: Two-pane layout possible, larger touch targets
-            binding.toolbar.setContentInsetStartWithNavigation(72)
+            binding.toolbar?.setContentInsetStartWithNavigation(72)
         } else if (isLargeScreen) {
             // Large phone: Slightly larger controls
-            binding.toolbar.setContentInsetStartWithNavigation(64)
+            binding.toolbar?.setContentInsetStartWithNavigation(64)
         }
     }
 
