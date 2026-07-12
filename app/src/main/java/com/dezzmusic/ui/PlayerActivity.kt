@@ -60,7 +60,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        binding.toolbar.setNavigationOnClickListener {
+        binding.toolbar?.setNavigationOnClickListener {
             finish()
             overridePendingTransition(R.anim.slide_in_top, R.anim.slide_out_bottom)
         }
