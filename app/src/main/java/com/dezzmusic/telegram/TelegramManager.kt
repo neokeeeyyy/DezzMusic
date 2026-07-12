@@ -469,6 +469,10 @@ class TelegramManager private constructor(private val context: Context) {
         }
     }
 
+    suspend fun getDownloadUrl(fileId: String): String? = withContext(Dispatchers.IO) {
+        downloadAndGetPath(fileId.toIntOrNull() ?: return@withContext null)
+    }
+
     fun logout() {
         isAuthenticated = false
         prefs.edit().remove("is_authenticated").apply()
