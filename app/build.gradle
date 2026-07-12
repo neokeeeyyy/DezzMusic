@@ -80,7 +80,6 @@ dependencies {
     // Gson for JSON
     implementation 'com.google.code.gson:gson:2.10.1'
 
-    // TDLib for Telegram (prebuilt native libs)
-    implementation 'io.github.tdlib-android:core:0.1.0'
-    implementation 'io.github.tdlib-android:ktx:0.1.0'
+    // TDLib for Telegram
+    implementation 'dev.g000sha256:tdl-coroutines:13.0.0'
 }

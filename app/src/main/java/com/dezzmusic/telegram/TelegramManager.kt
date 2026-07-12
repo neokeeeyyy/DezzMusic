@@ -3,10 +3,20 @@ package com.dezzmusic.telegram
 import android.content.Context
 import com.dezzmusic.db.Song
 import com.dezzmusic.MusicRepository
+import dev.g000sha256.tdl.TdlClient
+import dev.g000sha256.tdl.data.TdlResult
+import dev.g000sha256.tdl.dto.AuthorizationStateReady
+import dev.g000sha256.tdl.dto.AuthorizationStateWaitCode
+import dev.g000sha256.tdl.dto.AuthorizationStateWaitPhoneNumber
+import dev.g000sha256.tdl.dto.AuthorizationStateWaitRegistration
+import dev.g000sha256.tdl.dto.AuthorizationStateWaitTdlibParameters
+import dev.g000sha256.tdl.dto.FormattedText
+import dev.g000sha256.tdl.dto.InputMessageText
+import dev.g000sha256.tdl.dto.MessageText
+import dev.g000sha256.tdl.dto.PhoneNumberAuthenticationSettings
+import dev.g000sha256.tdl.dto.PhoneNumberCodeTypeVerify
 import kotlinx.coroutines.*
-import org.drinkless.td.Client
-import org.drinkless.td.TdApi
-import org.json.JSONObject
+import java.io.File
 
 class TelegramManager private constructor(private val context: Context) {
 
@@ -16,12 +26,7 @@ class TelegramManager private constructor(private val context: Context) {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val prefs = context.getSharedPreferences("telegram_prefs", Context.MODE_PRIVATE)
 
-    private var tdClient: Client? = null
-    private var phoneCodeHash: String = ""
-
-    @Volatile
-    private var lastResult: Any? = null
-    private val resultLock = Object()
+    private var client: TdlClient? = null
 
     companion object {
         @Volatile
@@ -52,93 +57,91 @@ class TelegramManager private constructor(private val context: Context) {
             .apply()
     }
 
-    private fun ensureClient(): Client {
-        if (tdClient == null) {
-            val handler = object : Client.ResultHandler {
-                override fun onResult(result: TdApi.TLObject) {
-                    synchronized(resultLock) {
-                        lastResult = result
-                        resultLock.notifyAll()
-                    }
-                }
-            }
-            tdClient = Client.create({ }, null, handler)
+    private suspend fun ensureClient(): TdlClient {
+        if (client == null) {
+            client = TdlClient.create()
         }
-        return tdClient!!
-    }
-
-    private suspend fun <T : TdApi.TLObject> execute(request: TdApi.Function): T = withContext(Dispatchers.IO) {
-        val client = ensureClient()
-        synchronized(resultLock) {
-            lastResult = null
-            client.send(request) { }
-        }
-        withTimeout(30_000) {
-            synchronized(resultLock) {
-                while (lastResult == null) {
-                    resultLock.wait(1000)
-                }
-                @Suppress("UNCHECKED_CAST")
-                lastResult as T
-            }
-        }
+        return client!!
     }
 
     private suspend fun initTdlib() {
-        val dbDir = context.filesDir.absolutePath + "/tdlib"
-        java.io.File(dbDir).mkdirs()
-
-        execute(TdApi.SetTdlibParameters().apply {
-            databaseDirectory = dbDir
-            useMessageDatabase = true
-            useSecretChats = false
-            apiId = this@TelegramManager.apiId.toInt()
-            apiHash = this@TelegramManager.apiHash
-            systemLanguageCode = "es"
-            deviceModel = "DezzMusic"
+        val dbPath = context.filesDir.absolutePath + "/tdlib"
+        File(dbPath).mkdirs()
+        val c = ensureClient()
+        c.setTdlibParameters(
+            useTestDc = false,
+            databaseDirectory = dbPath,
+            filesDirectory = dbPath + "/files",
+            databaseEncryptionKey = ByteArray(0),
+            useFileDatabase = true,
+            useChatInfoDatabase = true,
+            useMessageDatabase = true,
+            useSecretChats = false,
+            apiId = apiId.toInt(),
+            apiHash = apiHash,
+            systemLanguageCode = "es",
+            deviceModel = "DezzMusic",
+            systemVersion = "1.0",
             applicationVersion = "1.0"
-        })
+        )
     }
 
     suspend fun login(phoneNumber: String): LoginResult = withContext(Dispatchers.IO) {
         try {
-            val client = ensureClient()
+            val c = ensureClient()
 
-            val getState = execute<TdApi.AuthorizationState>(TdApi.GetAuthorizationState())
-            when (getState) {
-                is TdApi.AuthorizationStateReady -> {
-                    isAuthenticated = true
-                    prefs.edit().putBoolean("is_authenticated", true).apply()
-                    return@withContext LoginResult.Success
-                }
-                is TdApi.AuthorizationStateWaitEncryptionKey -> {
-                    client.send(TdApi.CheckDatabaseEncryptionKey()) { }
-                    synchronized(resultLock) {
-                        lastResult = null
-                        resultLock.notifyAll()
+            val stateResult = c.getAuthorizationState()
+            when (stateResult) {
+                is TdlResult.Success -> {
+                    val state = stateResult.result
+                    when (state) {
+                        is AuthorizationStateReady -> {
+                            isAuthenticated = true
+                            prefs.edit().putBoolean("is_authenticated", true).apply()
+                            return@withContext LoginResult.Success
+                        }
+                        is AuthorizationStateWaitTdlibParameters -> {
+                            initTdlib()
+                        }
+                        is AuthorizationStateWaitPhoneNumber -> {
+                            // Already initialized, proceed to send code
+                        }
+                        is AuthorizationStateWaitCode -> {
+                            // Code already sent, return CodeSent
+                            return@withContext LoginResult.CodeSent
+                        }
+                        is AuthorizationStateWaitRegistration -> {
+                            return@withContext LoginResult.CodeSent
+                        }
+                        else -> {}
                     }
-                    delay(500)
                 }
-                is TdApi.AuthorizationStateWaitTdlibParameters -> {
-                    initTdlib()
-                }
-                is TdApi.AuthorizationStateWaitPhoneNumber -> {
-                }
-                else -> {
+                is TdlResult.Failure -> {
+                    return@withContext LoginResult.Error("Error getting auth state: ${stateResult.message}")
                 }
             }
 
-            val sendCodeResult = execute<TdApi.AuthenticationCodeInfo>(
-                TdApi.SendAuthenticationCode(
-                    phoneNumber,
-                    TdApi.PhoneNumberAuthenticationSettings(
-                        false, true, false, true, false, false, ""
-                    )
+            val sendResult = c.setAuthenticationPhoneNumber(
+                phoneNumber = phoneNumber,
+                settings = PhoneNumberAuthenticationSettings(
+                    allowFlashCall = false,
+                    allowMissedCall = false,
+                    isCurrentPhoneNumber = true,
+                    hasUnknownPhoneNumber = false,
+                    allowSmsRetrieverApi = false,
+                    firebaseAuthenticationSettings = null,
+                    authenticationTokens = emptyList()
                 )
             )
 
-            phoneCodeHash = sendCodeResult.phoneCodeInfo.phoneCodeHash
-            LoginResult.CodeSent
+            when (sendResult) {
+                is TdlResult.Success -> {
+                    LoginResult.CodeSent
+                }
+                is TdlResult.Failure -> {
+                    LoginResult.Error("Error al enviar código: ${sendResult.message}")
+                }
+            }
         } catch (e: Exception) {
             LoginResult.Error(e.message ?: "Error desconocido")
         }
@@ -146,28 +149,39 @@ class TelegramManager private constructor(private val context: Context) {
 
     suspend fun verifyCode(code: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val result = execute<TdApi.AuthorizationState>(
-                TdApi.CheckAuthenticationCode(code, "", "")
-            )
+            val c = ensureClient()
+            val result = c.checkAuthenticationCode(code = code)
 
             when (result) {
-                is TdApi.AuthorizationStateWaitRegistration -> {
-                    execute<TdApi.AuthorizationState>(
-                        TdApi.RegisterUser("DezzMusic", "")
-                    )
-                    isAuthenticated = true
-                    prefs.edit().putBoolean("is_authenticated", true).apply()
-                    true
+                is TdlResult.Success -> {
+                    val stateResult = c.getAuthorizationState()
+                    if (stateResult is TdlResult.Success) {
+                        when (stateResult.result) {
+                            is AuthorizationStateWaitRegistration -> {
+                                c.registerUser(firstName = "DezzMusic", lastName = "", disableNotification = false)
+                                isAuthenticated = true
+                                prefs.edit().putBoolean("is_authenticated", true).apply()
+                                true
+                            }
+                            is AuthorizationStateReady -> {
+                                isAuthenticated = true
+                                prefs.edit().putBoolean("is_authenticated", true).apply()
+                                true
+                            }
+                            else -> {
+                                isAuthenticated = true
+                                prefs.edit().putBoolean("is_authenticated", true).apply()
+                                true
+                            }
+                        }
+                    } else {
+                        isAuthenticated = true
+                        prefs.edit().putBoolean("is_authenticated", true).apply()
+                        true
+                    }
                 }
-                is TdApi.AuthorizationStateReady -> {
-                    isAuthenticated = true
-                    prefs.edit().putBoolean("is_authenticated", true).apply()
-                    true
-                }
-                else -> {
-                    isAuthenticated = true
-                    prefs.edit().putBoolean("is_authenticated", true).apply()
-                    true
+                is TdlResult.Failure -> {
+                    false
                 }
             }
         } catch (e: Exception) {
@@ -177,41 +191,62 @@ class TelegramManager private constructor(private val context: Context) {
 
     suspend fun searchMusic(query: String): List<MusicSearchResult> = withContext(Dispatchers.IO) {
         try {
+            val c = ensureClient()
             val results = mutableListOf<MusicSearchResult>()
 
             val botUsername = "deezload2bot"
-            val chatResult = execute<TdApi.Chats>(TdApi.SearchChats(botUsername, 1))
-            var chatId = chatResult.chatIds.firstOrNull()
+            val searchResult = c.searchChats(query = botUsername, limit = 1)
+            var chatId: Long = 0
 
-            if (chatId == null) {
-                val user = execute<TdApi.User>(
-                    TdApi.SearchPublicChat(botUsername)
-                )
-                val created = execute<TdApi.Chat>(
-                    TdApi.CreatePrivateChat(user.id, false)
-                )
-                chatId = created.id
+            if (searchResult is TdlResult.Success) {
+                val chatIds = searchResult.result
+                if (chatIds.chatIds.isNotEmpty()) {
+                    chatId = chatIds.chatIds.first()
+                }
             }
 
-            clientSend(TdApi.SendMessage(
-                chatId, 0, 0, null, null,
-                TdApi.InputMessageText(
-                    TdApi.FormattedText(query, null), null, false, false
+            if (chatId == 0L) {
+                val userResult = c.searchPublicChat(username = botUsername)
+                if (userResult is TdlResult.Success) {
+                    val user = userResult.result
+                    val chatResult = c.createPrivateChat(userId = user.id, force = false)
+                    if (chatResult is TdlResult.Success) {
+                        chatId = chatResult.result.id
+                    }
+                }
+            }
+
+            if (chatId == 0L) return@withContext emptyList()
+
+            c.sendMessage(
+                chatId = chatId,
+                inputMessageContent = InputMessageText(
+                    text = FormattedText(text = query, entities = emptyList()),
+                    linkPreviewOptions = null,
+                    clearDraft = false,
+                    protectContent = false
                 )
-            ))
+            )
 
             delay(3000)
 
-            val history = execute<TdApi.Messages>(
-                TdApi.GetChatHistory(chatId, 0, 0, 10, false)
+            val historyResult = c.getChatHistory(
+                chatId = chatId,
+                fromMessageId = 0,
+                offset = 0,
+                limit = 10,
+                onlyLocal = false
             )
 
-            for (msg in history.messages) {
-                val content = msg.content
-                if (content is TdApi.MessageText) {
-                    val text = content.text.text
-                    if (text.contains("Title") || text.contains("artist")) {
-                        results.add(parseBotResponse(text, chatId, msg.id))
+            if (historyResult is TdlResult.Success) {
+                val messages = historyResult.result.messages
+                for (msg in messages) {
+                    val content = msg.content
+                    if (content is MessageText) {
+                        val text = content.text.text
+                        if (text.contains("Title") || text.contains("artist")) {
+                            results.add(parseBotResponse(text, chatId, msg.id))
+                        }
                     }
                 }
             }
@@ -220,11 +255,6 @@ class TelegramManager private constructor(private val context: Context) {
         } catch (e: Exception) {
             emptyList()
         }
-    }
-
-    private fun clientSend(request: TdApi.Function) {
-        val client = ensureClient()
-        client.send(request) { }
     }
 
     private fun parseBotResponse(text: String, chatId: Long, messageId: Long): MusicSearchResult {
@@ -260,7 +290,8 @@ class TelegramManager private constructor(private val context: Context) {
         try {
             if (song.telegramFileId.isEmpty()) return@withContext false
             val fileId = song.telegramFileId.toIntOrNull() ?: return@withContext false
-            execute<TdApi.File>(TdApi.DownloadFile(fileId, 32, 0, 0, true))
+            val c = ensureClient()
+            c.downloadFile(fileId = fileId, priority = 32, offset = 0, limit = 0, synchronous = true)
             delay(2000)
             val updatedSong = song.copy(isDownloaded = true)
             MusicRepository.getInstance(context).updateSong(updatedSong)
@@ -272,19 +303,21 @@ class TelegramManager private constructor(private val context: Context) {
 
     suspend fun getDownloadUrl(fileId: String): String? = withContext(Dispatchers.IO) {
         try {
-            val file = execute<TdApi.File>(
-                TdApi.GetFile(fileId.toIntOrNull() ?: return@withContext null)
-            )
-            if (file.local.isDownloadingCompleted) {
-                file.local.path
-            } else {
-                execute<TdApi.File>(
-                    TdApi.DownloadFile(file.id, 32, 0, 0, true)
-                )
-                delay(3000)
-                val updated = execute<TdApi.File>(TdApi.GetFile(file.id))
-                if (updated.local.isDownloadingCompleted) updated.local.path else null
-            }
+            val c = ensureClient()
+            val fileResult = c.getFile(fileId = fileId.toIntOrNull() ?: return@withContext null)
+            if (fileResult is TdlResult.Success) {
+                val file = fileResult.result
+                if (file.local.isDownloadingCompleted) {
+                    file.local.path
+                } else {
+                    c.downloadFile(fileId = file.id, priority = 32, offset = 0, limit = 0, synchronous = false)
+                    delay(3000)
+                    val updatedResult = c.getFile(fileId = file.id)
+                    if (updatedResult is TdlResult.Success && updatedResult.result.local.isDownloadingCompleted) {
+                        updatedResult.result.local.path
+                    } else null
+                }
+            } else null
         } catch (e: Exception) {
             null
         }
@@ -292,12 +325,16 @@ class TelegramManager private constructor(private val context: Context) {
 
     suspend fun sendBotCommand(chatId: Long, command: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            clientSend(TdApi.SendMessage(
-                chatId, 0, 0, null, null,
-                TdApi.InputMessageText(
-                    TdApi.FormattedText(command, null), null, false, false
+            val c = ensureClient()
+            c.sendMessage(
+                chatId = chatId,
+                inputMessageContent = InputMessageText(
+                    text = FormattedText(text = command, entities = emptyList()),
+                    linkPreviewOptions = null,
+                    clearDraft = false,
+                    protectContent = false
                 )
-            ))
+            )
             true
         } catch (e: Exception) {
             false
@@ -307,8 +344,12 @@ class TelegramManager private constructor(private val context: Context) {
     fun logout() {
         isAuthenticated = false
         prefs.edit().remove("is_authenticated").apply()
-        tdClient?.send(TdApi.LogOut()) { }
-        tdClient = null
+        scope.launch {
+            try {
+                client?.logOut()
+            } catch (_: Exception) {}
+        }
+        client = null
     }
 
     fun getApiId(): String = apiId
