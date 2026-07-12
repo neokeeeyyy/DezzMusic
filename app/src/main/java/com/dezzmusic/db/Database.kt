@@ -1,6 +1,28 @@
 package com.dezzmusic.db
 
+import android.content.Context
 import androidx.room.*
+
+@Database(entities = [Song::class, Playlist::class, PlaylistSong::class], version = 1, exportSchema = false)
+abstract class MusicDatabase : RoomDatabase() {
+    abstract fun songDao(): SongDao
+    abstract fun playlistDao(): PlaylistDao
+
+    companion object {
+        @Volatile
+        private var instance: MusicDatabase? = null
+
+        fun getInstance(context: Context): MusicDatabase {
+            return instance ?: synchronized(this) {
+                instance ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    MusicDatabase::class.java,
+                    "dezzmusic.db"
+                ).build().also { instance = it }
+            }
+        }
+    }
+}
 
 @Entity(tableName = "songs")
 data class Song(
