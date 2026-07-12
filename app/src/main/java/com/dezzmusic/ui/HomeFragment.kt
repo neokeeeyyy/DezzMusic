@@ -96,7 +96,7 @@ class HomeFragment : Fragment() {
                 }
                 true
             } else false
-        })
+        }
 
         binding.tilSearch.setEndIconOnClickListener {
             binding.etSearch.setText("")
