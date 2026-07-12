@@ -129,7 +129,7 @@ class TelegramManager private constructor(private val context: Context) {
                     hasUnknownPhoneNumber = false,
                     allowSmsRetrieverApi = false,
                     firebaseAuthenticationSettings = null,
-                    authenticationTokens = emptyList()
+                    authenticationTokens = emptyArray()
                 )
             )
 
@@ -287,8 +287,8 @@ class TelegramManager private constructor(private val context: Context) {
 
     suspend fun downloadSong(song: Song): Boolean = withContext(Dispatchers.IO) {
         try {
-            if (song.telegramFileId.isEmpty()) return@withContext false
-            val fileId = song.telegramFileId.toIntOrNull() ?: return@withContext false
+            if (song.telegramFileId.isNullOrEmpty()) return@withContext false
+            val fileId = song.telegramFileId?.toIntOrNull() ?: return@withContext false
             val c = ensureClient()
             c.downloadFile(fileId = fileId, priority = 32, offset = 0, limit = 0, synchronous = true)
             delay(2000)
