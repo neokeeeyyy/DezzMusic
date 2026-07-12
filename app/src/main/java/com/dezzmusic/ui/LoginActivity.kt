@@ -63,7 +63,8 @@ class LoginActivity : AppCompatActivity() {
                 is com.dezzmusic.telegram.LoginResult.CodeSent -> {
                     currentStep = 1
                     binding.etPhone.visibility = android.view.View.GONE
-                    binding.etCode.visibility = android.view.View.VISIBLE
+                    binding.etPhone.parent?.let { (it as android.view.View).visibility = android.view.View.GONE }
+                    binding.tilCode.visibility = android.view.View.VISIBLE
                     binding.tvSubtitle.text = "Código enviado a $phoneNumber"
                     binding.progressBar.visibility = android.view.View.GONE
                     binding.btnContinue.isEnabled = true
