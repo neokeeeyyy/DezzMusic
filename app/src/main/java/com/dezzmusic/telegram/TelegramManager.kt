@@ -14,7 +14,6 @@ import dev.g000sha256.tdl.dto.FormattedText
 import dev.g000sha256.tdl.dto.InputMessageText
 import dev.g000sha256.tdl.dto.MessageText
 import dev.g000sha256.tdl.dto.PhoneNumberAuthenticationSettings
-import dev.g000sha256.tdl.dto.PhoneNumberCodeTypeVerify
 import kotlinx.coroutines.*
 import java.io.File
 
@@ -241,6 +240,7 @@ class TelegramManager private constructor(private val context: Context) {
             if (historyResult is TdlResult.Success) {
                 val messages = historyResult.result.messages
                 for (msg in messages) {
+                    if (msg == null) continue
                     val content = msg.content
                     if (content is MessageText) {
                         val text = content.text.text
