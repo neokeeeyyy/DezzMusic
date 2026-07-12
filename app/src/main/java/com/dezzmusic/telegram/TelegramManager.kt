@@ -6,8 +6,11 @@ import com.dezzmusic.MusicRepository
 import dev.g000sha256.tdl.TdlClient
 import dev.g000sha256.tdl.TdlResult
 import dev.g000sha256.tdl.dto.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 
 class TelegramManager private constructor(private val context: Context) {
@@ -331,6 +334,72 @@ class TelegramManager private constructor(private val context: Context) {
         }
     }
 
+    // NEW: Inline bot search for real-time results
+    suspend fun searchMusicInline(query: String): List<InlineMusicResult> = withContext(Dispatchers.IO) {
+        try {
+            val c = ensureClient()
+            if (query.length < 2) return@withContext emptyList()
+
+            val result = c.getInlineQueryResults(
+                userId = 0, // 0 means current user
+                chatId = 0,
+                latitude = 0.0,
+                longitude = 0.0,
+                query = query,
+                offset = ""
+            )
+
+            if (result is TdlResult.Success) {
+                val inlineResults = result.result.results
+                val results = mutableListOf<InlineMusicResult>()
+                val thumbDir = File(context.cacheDir, "thumbnails")
+                thumbDir.mkdirs()
+
+                for (inlineResult in inlineResults) {
+                    when (inlineResult) {
+                        is InlineQueryResultAudio -> {
+                            var albumArtPath: String? = null
+                            inlineResult.thumbnail?.let { thumb ->
+                                try {
+                                    val thumbFile = File(thumbDir, "thumb_inline_${inlineResult.id}.jpg")
+                                    // Download thumbnail if it's a remote URL
+                                    if (thumb.isRemote) {
+                                        // We'll use the URL directly for Glide
+                                        albumArtPath = thumb.photo.sizes.firstOrNull()?.photo?.remote?.path ?: thumb.thumbnail?.remote?.path
+                                    } else {
+                                        thumbFile.writeBytes(thumb.thumbnail?.local?.data ?: ByteArray(0))
+                                        albumArtPath = thumbFile.absolutePath
+                                    }
+                                } catch (_: Exception) {}
+                            }
+
+                            results.add(
+                                InlineMusicResult(
+                                    id = inlineResult.id,
+                                    title = inlineResult.title,
+                                    artist = inlineResult.performer,
+                                    duration = inlineResult.audioDuration.toLong() * 1000L,
+                                    audioUrl = inlineResult.audioUrl,
+                                    fileId = inlineResult.audio.id.toString(),
+                                    thumbnailUrl = inlineResult.thumbnail?.photo?.sizes?.firstOrNull()?.photo?.remote?.path 
+                                        ?: inlineResult.thumbnail?.thumbnail?.remote?.path,
+                                    albumArtLocalPath = albumArtPath
+                                )
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+                results
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
     private fun parseTextResults(text: String, chatId: Long): List<MusicSearchResult> {
         val results = mutableListOf<MusicSearchResult>()
         val lines = text.split("\n")
@@ -496,6 +565,17 @@ sealed class LoginResult {
     object Success : LoginResult()
     data class Error(val message: String) : LoginResult()
 }
+
+data class InlineMusicResult(
+    val id: String,
+    val title: String,
+    val artist: String,
+    val duration: Long,
+    val audioUrl: String,
+    val fileId: String,
+    val thumbnailUrl: String?,
+    val albumArtLocalPath: String? = null
+)
 
 data class MusicSearchResult(
     val title: String,

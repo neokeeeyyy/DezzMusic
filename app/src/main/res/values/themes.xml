@@ -145,4 +145,11 @@
         <item name="colorOnSurface">@color/text_primary</item>
         <item name="shapeAppearanceMediumComponent">@style/ShapeMedium</item>
     </style>
+
+    <!-- Chip Text Style -->
+    <style name="ChipTextStyle" parent="TextAppearance.Material3.Chip">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
 </resources>

@@ -6,7 +6,9 @@ import android.content.ServiceConnection
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.IBinder
+import android.util.DisplayMetrics
 import android.view.View
+import android.view.ViewGroup
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -26,6 +28,8 @@ class PlayerActivity : AppCompatActivity() {
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var updateJob: Job? = null
     private var playlist: List<Song> = emptyList()
+    private var isTablet = false
+    private var isLargeScreen = false
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -46,15 +50,45 @@ class PlayerActivity : AppCompatActivity() {
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Detect screen size for responsive layout
+        detectScreenSize()
+        applyResponsiveLayout()
+
         setupToolbar()
         setupButtons()
         setupCoverFlow()
         bindMusicService()
     }
 
+    private fun detectScreenSize() {
+        val metrics = DisplayMetrics()
+        windowManager.defaultDisplay.getRealMetrics(metrics)
+        val widthDp = metrics.widthPixels / metrics.density
+        val heightDp = metrics.heightPixels / metrics.density
+        val smallestWidthDp = min(widthDp, heightDp)
+
+        // Tablet: 600dp+, Large phone: 480dp+
+        isTablet = smallestWidthDp >= 600
+        isLargeScreen = smallestWidthDp >= 480
+    }
+
+    private fun applyResponsiveLayout() {
+        // Adjust layout based on screen size
+        if (isTablet) {
+            // Tablet: Two-pane layout possible, larger touch targets
+            binding.toolbar.setContentInsetStartWithNavigation(72)
+        } else if (isLargeScreen) {
+            // Large phone: Slightly larger controls
+            binding.toolbar.setContentInsetStartWithNavigation(64)
+        }
+    }
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        detectScreenSize()
+        applyResponsiveLayout()
         setupCoverFlow()
+        updateCoverFlowVisibility()
     }
 
     private fun setupToolbar() {
@@ -109,12 +143,34 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun setupCoverFlow() {
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        updateCoverFlowVisibility()
+    }
+
+    private fun updateCoverFlowVisibility() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        // Always show CoverFlow in landscape on tablets, optional on phones
+        if (isLandscape) {
             binding.coverFlow?.visibility = View.VISIBLE
             loadCoverFlowItems()
         } else {
             binding.coverFlow?.visibility = View.GONE
         }
+
+        // Adjust main content for landscape
+        if (isLandscape && isTablet) {
+            // Tablet landscape: split view
+            adjustForLandscapeTablet()
+        }
+    }
+
+    private fun adjustForLandscapeTablet() {
+        // On tablet landscape, we can show more content
+        // CoverFlow takes left portion, controls on right
+        binding.coverFlow?.layoutParams = (binding.coverFlow?.layoutParams as? ViewGroup.MarginLayoutParams)?.apply {
+            width = resources.displayMetrics.widthPixels / 2
+        } ?: return
+        binding.coverFlow?.requestLayout()
     }
 
     private fun loadCoverFlowItems() {

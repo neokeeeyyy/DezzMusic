@@ -1,4 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DezzMusic</string>
+
+    <!-- Home/Search -->
+    <string name="search_hint">Buscar artistas, canciones, álbumes…</string>
+    <string name="recent_searches">Búsquedas recientes</string>
+    <string name="clear_recent">Limpiar todo</string>
+    <string name="trending">Tendencias</string>
+    <string name="most_played">Más escuchadas</string>
+    <string name="play_count">%d reproducciones</string>
+    <string name="duration_format">%d:%02d</string>
+    <string name="album_cover">Portada del álbum</string>
+
+    <!-- Empty states -->
+    <string name="empty_search">No se encontraron resultados</string>
+    <string name="empty_library">No hay canciones en tu biblioteca</string>
+    <string name="discover_music">Descubre nueva música</string>
+    <string name="search_to_start">Busca cualquier canción o artista usando la barra de búsqueda arriba</string>
+
+    <!-- Actions -->
+    <string name="play">Reproducir</string>
+    <string name="pause">Pausar</string>
+    <string name="play_pause">Reproducir/Pausar</string>
+    <string name="next">Siguiente</string>
+    <string name="previous">Anterior</string>
+    <string name="download">Descargar</string>
+    <string name="delete">Eliminar</string>
+    <string name="clear">Limpiar</string>
+    <string name="expand_player">Expandir reproductor</string>
+    <string name="collapse_player">Minimizar reproductor</string>
+
+    <!-- Notifications -->
+    <string name="downloaded">Descargado: %s</string>
+    <string name="download_error">Error al descargar</string>
+    <string name="search_cleared">Historial de búsquedas limpiado</string>
+
+    <!-- Player -->
+    <string name="now_playing">Reproduciendo ahora</string>
+    <string name="queue">Cola de reproducción</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ajustes</string>
+    <string name="download_quality">Calidad de descarga</string>
+    <string name="theme">Tema</string>
+    <string name="language">Idioma</string>
 </resources>

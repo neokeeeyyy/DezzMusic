@@ -18,15 +18,15 @@ class MainActivity : AppCompatActivity() {
 
         setupBottomNav()
         if (savedInstanceState == null) {
-            loadFragment(ChatsFragment(), false)
+            loadFragment(HomeFragment(), false)
         }
     }
 
     private fun setupBottomNav() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_chats -> {
-                    loadFragment(ChatsFragment(), true)
+                R.id.nav_home -> {
+                    loadFragment(HomeFragment(), true)
                     true
                 }
                 R.id.nav_library -> {
