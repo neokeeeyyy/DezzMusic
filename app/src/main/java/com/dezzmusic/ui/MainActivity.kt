@@ -9,6 +9,7 @@ import com.dezzmusic.databinding.ActivityMainBinding
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private var currentFragment: Fragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,22 +17,24 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupBottomNav()
-        loadFragment(ChatsFragment())
+        if (savedInstanceState == null) {
+            loadFragment(ChatsFragment(), false)
+        }
     }
 
     private fun setupBottomNav() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_chats -> {
-                    loadFragment(ChatsFragment())
+                    loadFragment(ChatsFragment(), true)
                     true
                 }
                 R.id.nav_library -> {
-                    loadFragment(LibraryFragment())
+                    loadFragment(LibraryFragment(), true)
                     true
                 }
                 R.id.nav_settings -> {
-                    loadFragment(SettingsFragment())
+                    loadFragment(SettingsFragment(), true)
                     true
                 }
                 else -> false
@@ -39,9 +42,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
+    private fun loadFragment(fragment: Fragment, withAnimation: Boolean) {
+        if (fragment.javaClass == currentFragment?.javaClass) return
+
+        val transaction = supportFragmentManager.beginTransaction()
+
+        if (withAnimation) {
+            transaction.setCustomAnimations(
+                R.anim.fade_in,
+                R.anim.fade_out,
+                R.anim.slide_in_left,
+                R.anim.slide_out_right
+            )
+        }
+
+        transaction.replace(R.id.fragmentContainer, fragment)
+        transaction.commit()
+
+        currentFragment = fragment
     }
 }

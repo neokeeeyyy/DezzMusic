@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.dezzmusic.R
 import com.dezzmusic.databinding.FragmentChatsBinding
 import com.dezzmusic.db.Song
 import com.dezzmusic.telegram.TelegramManager
@@ -42,6 +43,7 @@ class ChatsFragment : Fragment() {
                 putExtra("message_id", song.messageId)
             }
             startActivity(intent)
+            requireActivity().overridePendingTransition(R.anim.slide_in_bottom, R.anim.slide_out_top)
         }
 
         binding.recyclerView.apply {

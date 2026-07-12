@@ -95,6 +95,7 @@ class LoginActivity : AppCompatActivity() {
 
     private fun navigateToMain() {
         startActivity(Intent(this, MainActivity::class.java))
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         finish()
     }
 }

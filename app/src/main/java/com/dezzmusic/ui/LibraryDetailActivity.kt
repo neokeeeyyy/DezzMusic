@@ -1,9 +1,11 @@
 package com.dezzmusic.ui
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.dezzmusic.R
 import com.dezzmusic.databinding.ActivityLibraryDetailBinding
 import com.dezzmusic.MusicRepository
 import kotlinx.coroutines.launch
@@ -48,17 +50,21 @@ class LibraryDetailActivity : AppCompatActivity() {
             }
         }
 
-        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbar.setNavigationOnClickListener {
+            finish()
+            overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+        }
     }
 
     private fun setupRecyclerView() {
         adapter = SongAdapter { song ->
-            val intent = android.content.Intent(this, PlayerActivity::class.java).apply {
+            val intent = Intent(this, PlayerActivity::class.java).apply {
                 putExtra("song_id", song.id)
                 putExtra("chat_id", song.chatId)
                 putExtra("message_id", song.messageId)
             }
             startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_bottom, R.anim.slide_out_top)
         }
 
         binding.recyclerView.apply {

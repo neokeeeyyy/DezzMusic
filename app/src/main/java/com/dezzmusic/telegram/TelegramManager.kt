@@ -13,10 +13,14 @@ class TelegramManager private constructor(private val context: Context) {
     private var apiHash: String = ""
     private var isAuthenticated = false
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val prefs = context.getSharedPreferences("telegram_prefs", Context.MODE_PRIVATE)
 
     companion object {
         @Volatile
         private var instance: TelegramManager? = null
+
+        const val DEFAULT_API_ID = "36775534"
+        const val DEFAULT_API_HASH = "9326795e8a9162e7bd455c3a35d151ef"
 
         fun getInstance(context: Context): TelegramManager {
             return instance ?: synchronized(this) {
@@ -25,9 +29,19 @@ class TelegramManager private constructor(private val context: Context) {
         }
     }
 
+    init {
+        apiId = prefs.getString("api_id", DEFAULT_API_ID) ?: DEFAULT_API_ID
+        apiHash = prefs.getString("api_hash", DEFAULT_API_HASH) ?: DEFAULT_API_HASH
+        isAuthenticated = prefs.getBoolean("is_authenticated", false)
+    }
+
     fun setCredentials(apiId: String, apiHash: String) {
         this.apiId = apiId
         this.apiHash = apiHash
+        prefs.edit()
+            .putString("api_id", apiId)
+            .putString("api_hash", apiHash)
+            .apply()
     }
 
     suspend fun login(phoneNumber: String): LoginResult = withContext(Dispatchers.IO) {
@@ -46,6 +60,7 @@ class TelegramManager private constructor(private val context: Context) {
             // Simulate code verification
             delay(1000)
             isAuthenticated = true
+            prefs.edit().putBoolean("is_authenticated", true).apply()
             true
         } catch (e: Exception) {
             false
@@ -111,8 +126,13 @@ class TelegramManager private constructor(private val context: Context) {
 
     fun logout() {
         isAuthenticated = false
-        // Clear session data
+        prefs.edit()
+            .remove("is_authenticated")
+            .apply()
     }
+
+    fun getApiId(): String = apiId
+    fun getApiHash(): String = apiHash
 
     fun isLoggedIn(): Boolean = isAuthenticated
 }

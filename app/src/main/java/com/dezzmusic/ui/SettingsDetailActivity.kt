@@ -1,6 +1,7 @@
 package com.dezzmusic.ui
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.MenuItem
@@ -39,7 +40,10 @@ class SettingsDetailActivity : AppCompatActivity() {
             "about" -> binding.toolbar.title = "Acerca de"
         }
 
-        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbar.setNavigationOnClickListener {
+            finish()
+            overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+        }
     }
 
     private fun setupSettings() {
@@ -56,7 +60,6 @@ class SettingsDetailActivity : AppCompatActivity() {
     private fun setupAppearanceSettings() {
         binding.settingsContainer.removeAllViews()
 
-        // Dark Mode
         val darkModeView = createSwitchItem(
             "Modo oscuro",
             "Forzar tema oscuro en toda la app",
@@ -66,7 +69,6 @@ class SettingsDetailActivity : AppCompatActivity() {
         }
         binding.settingsContainer.addView(darkModeView)
 
-        // AMOLED Mode
         val amoledView = createSwitchItem(
             "Modo AMOLED",
             "Fondo completamente negro para pantallas AMOLED",
@@ -76,7 +78,6 @@ class SettingsDetailActivity : AppCompatActivity() {
         }
         binding.settingsContainer.addView(amoledView)
 
-        // Accent Color
         val accentView = createInfoItem(
             "Color de acento",
             "Azul (Material You)"
@@ -87,14 +88,12 @@ class SettingsDetailActivity : AppCompatActivity() {
     private fun setupPlaybackSettings() {
         binding.settingsContainer.removeAllViews()
 
-        // Audio Quality
         val qualityView = createInfoItem(
             "Calidad de audio",
             "Alta calidad"
         )
         binding.settingsContainer.addView(qualityView)
 
-        // Gapless
         val gaplessView = createSwitchItem(
             "Reproducción sin pausas",
             "Transición continua entre canciones",
@@ -104,7 +103,6 @@ class SettingsDetailActivity : AppCompatActivity() {
         }
         binding.settingsContainer.addView(gaplessView)
 
-        // Crossfade
         val crossfadeView = createSwitchItem(
             "Fundido cruzado",
             "Superponer canciones al cambiar",
@@ -159,8 +157,9 @@ class SettingsDetailActivity : AppCompatActivity() {
             "Bot Deezload",
             "Configurar @deezload2bot"
         ) {
-            val intent = android.content.Intent(this, DeezloadBotActivity::class.java)
+            val intent = Intent(this, DeezloadBotActivity::class.java)
             startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
         binding.settingsContainer.addView(botView)
 
@@ -227,6 +226,7 @@ class SettingsDetailActivity : AppCompatActivity() {
         return when (item.itemId) {
             android.R.id.home -> {
                 finish()
+                overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
                 true
             }
             else -> super.onOptionsItemSelected(item)

@@ -3,8 +3,10 @@ package com.dezzmusic.ui
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.IBinder
+import android.view.View
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -23,6 +25,7 @@ class PlayerActivity : AppCompatActivity() {
     private var currentSong: Song? = null
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var updateJob: Job? = null
+    private var playlist: List<Song> = emptyList()
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -45,29 +48,41 @@ class PlayerActivity : AppCompatActivity() {
 
         setupToolbar()
         setupButtons()
+        setupCoverFlow()
         bindMusicService()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        setupCoverFlow()
     }
 
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbar.setNavigationOnClickListener {
+            finish()
+            overridePendingTransition(R.anim.slide_in_top, R.anim.slide_out_bottom)
+        }
     }
 
     private fun setupButtons() {
         binding.btnPlayPause.setOnClickListener {
             musicService?.togglePlayPause()
             updatePlayPauseButton()
+            animateButton(it)
         }
 
         binding.btnNext.setOnClickListener {
             musicService?.playNext()
             updateSongInfo()
+            animateButton(it)
         }
 
         binding.btnPrevious.setOnClickListener {
             musicService?.playPrevious()
             updateSongInfo()
+            animateButton(it)
         }
 
         binding.btnFavorite.setOnClickListener {
@@ -78,6 +93,7 @@ class PlayerActivity : AppCompatActivity() {
                     updateFavoriteButton()
                 }
             }
+            animateButton(it)
         }
 
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -90,6 +106,61 @@ class PlayerActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+    }
+
+    private fun setupCoverFlow() {
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            binding.coverFlow?.visibility = View.VISIBLE
+            loadCoverFlowItems()
+        } else {
+            binding.coverFlow?.visibility = View.GONE
+        }
+    }
+
+    private fun loadCoverFlowItems() {
+        lifecycleScope.launch {
+            val allSongs = MusicRepository.getInstance(this@PlayerActivity).getAllSongs()
+            playlist = allSongs
+            musicService?.setPlaylist(allSongs)
+
+            val items = allSongs.map { song ->
+                CoverFlowView.CoverFlowItem(
+                    title = song.title,
+                    artist = song.artist,
+                    cover = null
+                )
+            }
+
+            binding.coverFlow?.setItems(items)
+            binding.coverFlow?.setOnItemSelectedListener { index ->
+                if (index in playlist.indices) {
+                    musicService?.playSong(playlist[index])
+                    currentSong = playlist[index]
+                    updateSongInfo()
+                    updatePlayPauseButton()
+                }
+            }
+
+            val currentIndex = playlist.indexOfFirst { it.id == currentSong?.id }
+            if (currentIndex >= 0) {
+                binding.coverFlow?.setSelectedIndex(currentIndex)
+            }
+        }
+    }
+
+    private fun animateButton(view: View) {
+        view.animate()
+            .scaleX(0.85f)
+            .scaleY(0.85f)
+            .setDuration(50)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(100)
+                    .start()
+            }
+            .start()
     }
 
     private fun bindMusicService() {

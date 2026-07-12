@@ -1,5 +1,6 @@
 package com.dezzmusic.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -7,9 +8,9 @@ import android.view.inputmethod.EditorInfo
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.dezzmusic.R
 import com.dezzmusic.databinding.ActivitySearchBinding
 import com.dezzmusic.MusicRepository
-import com.dezzmusic.telegram.TelegramManager
 import kotlinx.coroutines.launch
 
 class SearchActivity : AppCompatActivity() {
@@ -31,7 +32,10 @@ class SearchActivity : AppCompatActivity() {
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbar.setNavigationOnClickListener {
+            finish()
+            overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+        }
     }
 
     private fun setupSearch() {
@@ -69,12 +73,13 @@ class SearchActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = SongAdapter { song ->
-            val intent = android.content.Intent(this, PlayerActivity::class.java).apply {
+            val intent = Intent(this, PlayerActivity::class.java).apply {
                 putExtra("song_id", song.id)
                 putExtra("chat_id", song.chatId)
                 putExtra("message_id", song.messageId)
             }
             startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_bottom, R.anim.slide_out_top)
         }
 
         binding.recyclerView.apply {
@@ -84,7 +89,6 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private suspend fun searchSongs(query: String) {
-        // Search local database
         val localResults = MusicRepository.getInstance(this).searchSongs(query)
         adapter.submitList(localResults)
         binding.emptyState.visibility = if (localResults.isEmpty()) {

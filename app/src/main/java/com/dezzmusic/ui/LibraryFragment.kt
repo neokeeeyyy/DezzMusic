@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.dezzmusic.R
 import com.dezzmusic.databinding.FragmentLibraryBinding
 import com.dezzmusic.db.Song
 import com.dezzmusic.MusicRepository
@@ -43,6 +44,7 @@ class LibraryFragment : Fragment() {
                 putExtra("message_id", song.messageId)
             }
             startActivity(intent)
+            requireActivity().overridePendingTransition(R.anim.slide_in_bottom, R.anim.slide_out_top)
         }
 
         binding.recyclerView.apply {
@@ -53,32 +55,28 @@ class LibraryFragment : Fragment() {
 
     private fun setupQuickActions() {
         binding.btnFavorites.setOnClickListener {
-            val intent = Intent(requireContext(), LibraryDetailActivity::class.java).apply {
-                putExtra("type", "favorites")
-            }
-            startActivity(intent)
+            launchLibraryDetail("favorites")
         }
 
         binding.btnRecent.setOnClickListener {
-            val intent = Intent(requireContext(), LibraryDetailActivity::class.java).apply {
-                putExtra("type", "recent")
-            }
-            startActivity(intent)
+            launchLibraryDetail("recent")
         }
 
         binding.btnMostPlayed.setOnClickListener {
-            val intent = Intent(requireContext(), LibraryDetailActivity::class.java).apply {
-                putExtra("type", "most_played")
-            }
-            startActivity(intent)
+            launchLibraryDetail("most_played")
         }
 
         binding.btnPlaylists.setOnClickListener {
-            val intent = Intent(requireContext(), LibraryDetailActivity::class.java).apply {
-                putExtra("type", "playlists")
-            }
-            startActivity(intent)
+            launchLibraryDetail("playlists")
         }
+    }
+
+    private fun launchLibraryDetail(type: String) {
+        val intent = Intent(requireContext(), LibraryDetailActivity::class.java).apply {
+            putExtra("type", type)
+        }
+        startActivity(intent)
+        requireActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
     private fun loadSongs() {

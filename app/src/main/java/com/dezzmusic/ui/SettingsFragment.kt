@@ -1,10 +1,12 @@
 package com.dezzmusic.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.dezzmusic.R
 import com.dezzmusic.databinding.FragmentSettingsBinding
 
 class SettingsFragment : Fragment() {
@@ -28,45 +30,42 @@ class SettingsFragment : Fragment() {
 
     private fun setupSettings() {
         binding.settingsAppearance.setOnClickListener {
-            val intent = android.content.Intent(requireContext(), SettingsDetailActivity::class.java)
-            intent.putExtra("settings_type", "appearance")
-            startActivity(intent)
+            launchSettingsDetail("appearance")
         }
 
         binding.settingsPlayback.setOnClickListener {
-            val intent = android.content.Intent(requireContext(), SettingsDetailActivity::class.java)
-            intent.putExtra("settings_type", "playback")
-            startActivity(intent)
+            launchSettingsDetail("playback")
         }
 
         binding.settingsStorage.setOnClickListener {
-            val intent = android.content.Intent(requireContext(), SettingsDetailActivity::class.java)
-            intent.putExtra("settings_type", "storage")
-            startActivity(intent)
+            launchSettingsDetail("storage")
         }
 
         binding.settingsNotifications.setOnClickListener {
-            val intent = android.content.Intent(requireContext(), SettingsDetailActivity::class.java)
-            intent.putExtra("settings_type", "notifications")
-            startActivity(intent)
+            launchSettingsDetail("notifications")
         }
 
         binding.settingsAccount.setOnClickListener {
-            val intent = android.content.Intent(requireContext(), SettingsDetailActivity::class.java)
-            intent.putExtra("settings_type", "account")
-            startActivity(intent)
+            launchSettingsDetail("account")
         }
 
         binding.settingsAbout.setOnClickListener {
-            val intent = android.content.Intent(requireContext(), SettingsDetailActivity::class.java)
-            intent.putExtra("settings_type", "about")
-            startActivity(intent)
+            launchSettingsDetail("about")
         }
 
         binding.btnDeezload.setOnClickListener {
-            val intent = android.content.Intent(requireContext(), DeezloadBotActivity::class.java)
+            val intent = Intent(requireContext(), DeezloadBotActivity::class.java)
             startActivity(intent)
+            requireActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
+    }
+
+    private fun launchSettingsDetail(type: String) {
+        val intent = Intent(requireContext(), SettingsDetailActivity::class.java).apply {
+            putExtra("settings_type", type)
+        }
+        startActivity(intent)
+        requireActivity().overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
     override fun onDestroyView() {
