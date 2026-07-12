@@ -4,7 +4,7 @@ import android.content.Context
 import com.dezzmusic.db.Song
 import com.dezzmusic.MusicRepository
 import dev.g000sha256.tdl.TdlClient
-import dev.g000sha256.tdl.data.TdlResult
+import dev.g000sha256.tdl.TdlResult
 import dev.g000sha256.tdl.dto.AuthorizationStateReady
 import dev.g000sha256.tdl.dto.AuthorizationStateWaitCode
 import dev.g000sha256.tdl.dto.AuthorizationStateWaitPhoneNumber
@@ -220,10 +220,9 @@ class TelegramManager private constructor(private val context: Context) {
             c.sendMessage(
                 chatId = chatId,
                 inputMessageContent = InputMessageText(
-                    text = FormattedText(text = query, entities = emptyList()),
+                    text = FormattedText(text = query, entities = emptyArray()),
                     linkPreviewOptions = null,
-                    clearDraft = false,
-                    protectContent = false
+                    clearDraft = false
                 )
             )
 
@@ -329,10 +328,9 @@ class TelegramManager private constructor(private val context: Context) {
             c.sendMessage(
                 chatId = chatId,
                 inputMessageContent = InputMessageText(
-                    text = FormattedText(text = command, entities = emptyList()),
+                    text = FormattedText(text = command, entities = emptyArray()),
                     linkPreviewOptions = null,
-                    clearDraft = false,
-                    protectContent = false
+                    clearDraft = false
                 )
             )
             true

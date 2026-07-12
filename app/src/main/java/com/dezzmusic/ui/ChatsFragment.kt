@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dezzmusic.R
+import com.dezzmusic.MusicRepository
 import com.dezzmusic.databinding.FragmentChatsBinding
 import com.dezzmusic.db.Song
 import com.dezzmusic.telegram.TelegramManager
@@ -54,7 +55,7 @@ class ChatsFragment : Fragment() {
 
     private fun loadSongs() {
         viewLifecycleOwner.lifecycleScope.launch {
-            val songs = TelegramManager.getInstance(requireContext()).getAvailableSongs()
+            val songs = MusicRepository.getInstance(requireContext()).getAllSongs()
             adapter.submitList(songs)
             binding.emptyState.visibility = if (songs.isEmpty()) View.VISIBLE else View.GONE
         }
