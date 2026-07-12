@@ -8,6 +8,5 @@
     <changeClipBounds
         android:duration="300" />
     <fade
-        android:duration="300"
-        android:fadeMode="cross" />
+        android:duration="300" />
 </set>
