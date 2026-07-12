@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.dezzmusic.databinding.ItemSearchResultBinding
 import com.dezzmusic.telegram.MusicSearchResult
 
@@ -43,6 +44,15 @@ class SearchResultAdapter(
                 tvTitle.text = result.title
                 tvArtist.text = result.artist
                 tvDuration.text = formatDuration(result.duration)
+
+                if (result.albumArt != null) {
+                    Glide.with(ivAlbumArt.context)
+                        .load(result.albumArt)
+                        .circleCrop()
+                        .into(ivAlbumArt)
+                } else {
+                    ivAlbumArt.setImageResource(com.dezzmusic.R.drawable.ic_music_note)
+                }
             }
         }
 

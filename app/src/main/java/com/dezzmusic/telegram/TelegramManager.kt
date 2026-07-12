@@ -5,16 +5,9 @@ import com.dezzmusic.db.Song
 import com.dezzmusic.MusicRepository
 import dev.g000sha256.tdl.TdlClient
 import dev.g000sha256.tdl.TdlResult
-import dev.g000sha256.tdl.dto.AuthorizationStateReady
-import dev.g000sha256.tdl.dto.AuthorizationStateWaitCode
-import dev.g000sha256.tdl.dto.AuthorizationStateWaitPhoneNumber
-import dev.g000sha256.tdl.dto.AuthorizationStateWaitRegistration
-import dev.g000sha256.tdl.dto.AuthorizationStateWaitTdlibParameters
-import dev.g000sha256.tdl.dto.FormattedText
-import dev.g000sha256.tdl.dto.InputMessageText
-import dev.g000sha256.tdl.dto.MessageText
-import dev.g000sha256.tdl.dto.PhoneNumberAuthenticationSettings
+import dev.g000sha256.tdl.dto.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import java.io.File
 
 class TelegramManager private constructor(private val context: Context) {
@@ -26,6 +19,8 @@ class TelegramManager private constructor(private val context: Context) {
     private val prefs = context.getSharedPreferences("telegram_prefs", Context.MODE_PRIVATE)
 
     private var client: TdlClient? = null
+    private var botChatId: Long = 0
+    private var botUserId: Long = 0
 
     companion object {
         @Volatile
@@ -33,6 +28,7 @@ class TelegramManager private constructor(private val context: Context) {
 
         const val DEFAULT_API_ID = "36775534"
         const val DEFAULT_API_HASH = "9326795e8a9162e7bd455c3a35d151ef"
+        const val BOT_USERNAME = "deezload2bot"
 
         fun getInstance(context: Context): TelegramManager {
             return instance ?: synchronized(this) {
@@ -102,11 +98,8 @@ class TelegramManager private constructor(private val context: Context) {
                         is AuthorizationStateWaitTdlibParameters -> {
                             initTdlib()
                         }
-                        is AuthorizationStateWaitPhoneNumber -> {
-                            // Already initialized, proceed to send code
-                        }
+                        is AuthorizationStateWaitPhoneNumber -> {}
                         is AuthorizationStateWaitCode -> {
-                            // Code already sent, return CodeSent
                             return@withContext LoginResult.CodeSent
                         }
                         is AuthorizationStateWaitRegistration -> {
@@ -134,12 +127,8 @@ class TelegramManager private constructor(private val context: Context) {
             )
 
             when (sendResult) {
-                is TdlResult.Success -> {
-                    LoginResult.CodeSent
-                }
-                is TdlResult.Failure -> {
-                    LoginResult.Error("Error al enviar código: ${sendResult.message}")
-                }
+                is TdlResult.Success -> LoginResult.CodeSent
+                is TdlResult.Failure -> LoginResult.Error("Error al enviar código: ${sendResult.message}")
             }
         } catch (e: Exception) {
             LoginResult.Error(e.message ?: "Error desconocido")
@@ -179,43 +168,49 @@ class TelegramManager private constructor(private val context: Context) {
                         true
                     }
                 }
-                is TdlResult.Failure -> {
-                    false
-                }
+                is TdlResult.Failure -> false
             }
         } catch (e: Exception) {
             false
         }
     }
 
+    private suspend fun ensureBotChat(): Long {
+        if (botChatId != 0L) return botChatId
+
+        val c = ensureClient()
+
+        val result = c.searchPublicChat(username = BOT_USERNAME)
+        if (result is TdlResult.Success) {
+            val chat = result.result
+            botChatId = chat.id
+            if (chat.type is ChatTypePrivate) {
+                botUserId = (chat.type as ChatTypePrivate).userId
+            }
+            return botChatId
+        }
+
+        val searchResult = c.searchChats(query = BOT_USERNAME, limit = 1)
+        if (searchResult is TdlResult.Success) {
+            val chatIds = searchResult.result
+            if (chatIds.chatIds.isNotEmpty()) {
+                botChatId = chatIds.chatIds.first()
+                return botChatId
+            }
+        }
+
+        return 0L
+    }
+
     suspend fun searchMusic(query: String): List<MusicSearchResult> = withContext(Dispatchers.IO) {
         try {
             val c = ensureClient()
-            val results = mutableListOf<MusicSearchResult>()
-
-            val botUsername = "deezload2bot"
-            val searchResult = c.searchChats(query = botUsername, limit = 1)
-            var chatId: Long = 0
-
-            if (searchResult is TdlResult.Success) {
-                val chatIds = searchResult.result
-                if (chatIds.chatIds.isNotEmpty()) {
-                    chatId = chatIds.chatIds.first()
-                }
-            }
-
-            if (chatId == 0L) {
-                val userResult = c.searchPublicChat(username = botUsername)
-                if (userResult is TdlResult.Success) {
-                    val user = userResult.result
-                    val chatResult = c.createPrivateChat(userId = user.id, force = false)
-                    if (chatResult is TdlResult.Success) {
-                        chatId = chatResult.result.id
-                    }
-                }
-            }
-
+            val chatId = ensureBotChat()
             if (chatId == 0L) return@withContext emptyList()
+
+            val results = mutableListOf<MusicSearchResult>()
+            val thumbDir = File(context.cacheDir, "thumbnails")
+            thumbDir.mkdirs()
 
             c.sendMessage(
                 chatId = chatId,
@@ -226,13 +221,13 @@ class TelegramManager private constructor(private val context: Context) {
                 )
             )
 
-            delay(3000)
+            delay(4000)
 
             val historyResult = c.getChatHistory(
                 chatId = chatId,
                 fromMessageId = 0,
                 offset = 0,
-                limit = 10,
+                limit = 30,
                 onlyLocal = false
             )
 
@@ -241,11 +236,91 @@ class TelegramManager private constructor(private val context: Context) {
                 for (msg in messages) {
                     if (msg == null) continue
                     val content = msg.content
-                    if (content is MessageText) {
-                        val text = content.text.text
-                        if (text.contains("Title") || text.contains("artist")) {
-                            results.add(parseBotResponse(text, chatId, msg.id))
+
+                    when (content) {
+                        is MessageAudio -> {
+                            val audio = content.audio
+                            var albumArtPath: String? = null
+                            audio.albumCoverMinithumbnail?.let { mini ->
+                                try {
+                                    val thumbFile = File(thumbDir, "thumb_${audio.audio.id}.jpg")
+                                    thumbFile.writeBytes(mini.data)
+                                    albumArtPath = thumbFile.absolutePath
+                                } catch (_: Exception) {}
+                            }
+
+                            results.add(
+                                MusicSearchResult(
+                                    title = audio.title,
+                                    artist = audio.performer,
+                                    duration = audio.duration * 1000L,
+                                    fileId = audio.audio.id.toString(),
+                                    messageId = msg.id,
+                                    chatId = chatId,
+                                    albumArt = albumArtPath
+                                )
+                            )
                         }
+                        is MessageText -> {
+                            val text = content.text.text
+                            val parsed = parseTextResults(text, chatId)
+                            results.addAll(parsed)
+                        }
+                        else -> {}
+                    }
+                }
+            }
+
+            delay(3000)
+
+            val secondBatch = c.getChatHistory(
+                chatId = chatId,
+                fromMessageId = 0,
+                offset = 0,
+                limit = 50,
+                onlyLocal = false
+            )
+
+            if (secondBatch is TdlResult.Success) {
+                val newIds = results.map { it.messageId }.toSet()
+                for (msg in secondBatch.result.messages) {
+                    if (msg == null || msg.id in newIds) continue
+                    val content = msg.content
+                    when (content) {
+                        is MessageAudio -> {
+                            val audio = content.audio
+                            if (results.none { it.fileId == audio.audio.id.toString() }) {
+                                var albumArtPath: String? = null
+                                audio.albumCoverMinithumbnail?.let { mini ->
+                                    try {
+                                        val thumbFile = File(thumbDir, "thumb_${audio.audio.id}.jpg")
+                                        thumbFile.writeBytes(mini.data)
+                                        albumArtPath = thumbFile.absolutePath
+                                    } catch (_: Exception) {}
+                                }
+                                results.add(
+                                    MusicSearchResult(
+                                        title = audio.title,
+                                        artist = audio.performer,
+                                        duration = audio.duration * 1000L,
+                                        fileId = audio.audio.id.toString(),
+                                        messageId = msg.id,
+                                        chatId = chatId,
+                                        albumArt = albumArtPath
+                                    )
+                                )
+                            }
+                        }
+                        is MessageText -> {
+                            val text = content.text.text
+                            val parsed = parseTextResults(text, chatId)
+                            for (pr in parsed) {
+                                if (results.none { it.fileId == pr.fileId }) {
+                                    results.add(pr)
+                                }
+                            }
+                        }
+                        else -> {}
                     }
                 }
             }
@@ -256,67 +331,122 @@ class TelegramManager private constructor(private val context: Context) {
         }
     }
 
-    private fun parseBotResponse(text: String, chatId: Long, messageId: Long): MusicSearchResult {
+    private fun parseTextResults(text: String, chatId: Long): List<MusicSearchResult> {
+        val results = mutableListOf<MusicSearchResult>()
         val lines = text.split("\n")
-        var title = "Unknown"
-        var artist = "Unknown"
-        var duration = 0L
-        var fileId = ""
+        var i = 0
+        while (i < lines.size) {
+            val line = lines[i].trim()
+            if (line.isEmpty()) { i++; continue }
 
-        for (line in lines) {
-            val lower = line.lowercase()
-            when {
-                lower.startsWith("title") -> title = line.substringAfter(":").trim()
-                lower.startsWith("artist") || lower.startsWith("by") -> artist = line.substringAfter(":").trim()
-                lower.startsWith("duration") -> {
-                    val dur = line.substringAfter(":").trim()
-                    val parts = dur.split(":")
+            val numberMatch = Regex("""^\d+[\.\)]\s*(.+?)\s*[-–—]\s*(.+?)(?:\s*\(?(\d+:\d+)\)?)?\s*$""").find(line)
+            if (numberMatch != null) {
+                val title = numberMatch.groupValues[1].trim()
+                val artist = numberMatch.groupValues[2].trim()
+                val durationStr = numberMatch.groupValues[3]
+                var duration = 0L
+                if (durationStr.isNotEmpty()) {
+                    val parts = durationStr.split(":")
                     if (parts.size == 2) {
-                        duration = (parts[0].trim().toLongOrNull() ?: 0) * 60 +
-                                (parts[1].trim().toLongOrNull() ?: 0)
+                        duration = (parts[0].toLongOrNull() ?: 0) * 60000L +
+                                (parts[1].toLongOrNull() ?: 0) * 1000L
                     }
                 }
-                lower.startsWith("file") || lower.startsWith("id") -> {
-                    if (fileId.isEmpty()) fileId = line.substringAfter(":").trim()
+                val previewLine = if (i + 1 < lines.size) lines[i + 1] else ""
+                val fileIdMatch = Regex("""(?:id|file|code)[:\s]*["']?([a-zA-Z0-9_]+)["']?""", RegexOption.IGNORE_CASE).find(previewLine)
+                results.add(
+                    MusicSearchResult(
+                        title = title,
+                        artist = artist,
+                        duration = duration,
+                        fileId = fileIdMatch?.groupValues?.getOrNull(1) ?: "text_${results.size}",
+                        messageId = 0L,
+                        chatId = chatId,
+                        albumArt = null
+                    )
+                )
+                i += 2
+            } else {
+                val titleMatch = Regex("""(.+?)\s*[-–—]\s*(.+)""").find(line)
+                if (titleMatch != null) {
+                    val title = titleMatch.groupValues[1].trim()
+                    val artist = titleMatch.groupValues[2].trim()
+                    results.add(
+                        MusicSearchResult(
+                            title = title,
+                            artist = artist,
+                            duration = 0L,
+                            fileId = "text_${results.size}",
+                            messageId = 0L,
+                            chatId = chatId,
+                            albumArt = null
+                        )
+                    )
                 }
+                i++
             }
         }
-
-        return MusicSearchResult(title, artist, duration, fileId, messageId, chatId)
+        return results
     }
 
     suspend fun downloadSong(song: Song): Boolean = withContext(Dispatchers.IO) {
         try {
             if (song.telegramFileId.isNullOrEmpty()) return@withContext false
-            val fileId = song.telegramFileId?.toIntOrNull() ?: return@withContext false
+            val fileId = song.telegramFileId.toIntOrNull() ?: return@withContext false
             val c = ensureClient()
-            c.downloadFile(fileId = fileId, priority = 32, offset = 0, limit = 0, synchronous = true)
-            delay(2000)
-            val updatedSong = song.copy(isDownloaded = true)
-            MusicRepository.getInstance(context).updateSong(updatedSong)
-            true
+
+            val downloadResult = c.downloadFile(fileId = fileId, priority = 32, offset = 0, limit = 0, synchronous = true)
+
+            val maxWait = 30_000L
+            val pollInterval = 500L
+            var waited = 0L
+            var completed = false
+
+            while (waited < maxWait && !completed) {
+                delay(pollInterval)
+                waited += pollInterval
+                val fileResult = c.getFile(fileId = fileId)
+                if (fileResult is TdlResult.Success) {
+                    val file = fileResult.result
+                    if (file.local.isDownloadingCompleted) {
+                        completed = true
+                        val updatedSong = if (file.local.path.isNotEmpty()) {
+                            song.copy(isDownloaded = true, path = file.local.path)
+                        } else {
+                            song.copy(isDownloaded = true)
+                        }
+                        MusicRepository.getInstance(context).updateSong(updatedSong)
+                    }
+                }
+            }
+
+            completed
         } catch (e: Exception) {
             false
         }
     }
 
-    suspend fun getDownloadUrl(fileId: String): String? = withContext(Dispatchers.IO) {
+    suspend fun downloadAndGetPath(fileId: Int): String? = withContext(Dispatchers.IO) {
         try {
             val c = ensureClient()
-            val fileResult = c.getFile(fileId = fileId.toIntOrNull() ?: return@withContext null)
-            if (fileResult is TdlResult.Success) {
-                val file = fileResult.result
-                if (file.local.isDownloadingCompleted) {
-                    file.local.path
-                } else {
-                    c.downloadFile(fileId = file.id, priority = 32, offset = 0, limit = 0, synchronous = false)
-                    delay(3000)
-                    val updatedResult = c.getFile(fileId = file.id)
-                    if (updatedResult is TdlResult.Success && updatedResult.result.local.isDownloadingCompleted) {
-                        updatedResult.result.local.path
-                    } else null
+            c.downloadFile(fileId = fileId, priority = 32, offset = 0, limit = 0, synchronous = true)
+
+            val maxWait = 30_000L
+            val pollInterval = 500L
+            var waited = 0L
+
+            while (waited < maxWait) {
+                delay(pollInterval)
+                waited += pollInterval
+                val fileResult = c.getFile(fileId = fileId)
+                if (fileResult is TdlResult.Success) {
+                    val file = fileResult.result
+                    if (file.local.isDownloadingCompleted && file.local.path.isNotEmpty()) {
+                        return@withContext file.local.path
+                    }
                 }
-            } else null
+            }
+            null
         } catch (e: Exception) {
             null
         }
@@ -348,6 +478,8 @@ class TelegramManager private constructor(private val context: Context) {
             } catch (_: Exception) {}
         }
         client = null
+        botChatId = 0
+        botUserId = 0
     }
 
     fun getApiId(): String = apiId
@@ -367,5 +499,6 @@ data class MusicSearchResult(
     val duration: Long,
     val fileId: String,
     val messageId: Long,
-    val chatId: Long
+    val chatId: Long,
+    val albumArt: String? = null
 )
