@@ -76,7 +76,7 @@ class MusicService : Service() {
                     playPrevious()
                 }
             })
-            isActive = true
+            this.isActive = true
         }
     }
 
