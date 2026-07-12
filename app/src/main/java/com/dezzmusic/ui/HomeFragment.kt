@@ -22,7 +22,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.dezzmusic.R
 import com.dezzmusic.databinding.FragmentHomeBinding
 import com.dezzmusic.db.Song
-import com.dezzmusic.telegram.InlineMusicResult
+import com.dezzmusic.telegram.MusicSearchResult
 import com.dezzmusic.telegram.TelegramManager
 import com.dezzmusic.MusicRepository
 import com.dezzmusic.music.MusicService
@@ -136,20 +136,8 @@ class HomeFragment : Fragment() {
         searchJob = lifecycleScope.launch {
             val results = TelegramManager.getInstance(requireContext()).searchMusic(query)
             if (isAdded) {
-                val inlineResults = results.map { r ->
-                    InlineMusicResult(
-                        id = r.fileId,
-                        title = r.title,
-                        artist = r.artist,
-                        duration = r.duration,
-                        audioUrl = "",
-                        fileId = r.fileId,
-                        thumbnailUrl = r.albumArt,
-                        albumArtLocalPath = r.albumArt
-                    )
-                }
-                searchAdapter.submitList(inlineResults)
-                binding.tvSearchResultsTitle.text = if (inlineResults.isEmpty()) "No se encontraron resultados para \"$query\"" else "Resultados para \"$query\" (${inlineResults.size})"
+                searchAdapter.submitList(results)
+                binding.tvSearchResultsTitle.text = if (results.isEmpty()) "No se encontraron resultados para \"$query\"" else "Resultados para \"$query\" (${results.size})"
             }
         }
     }
@@ -238,7 +226,7 @@ class HomeFragment : Fragment() {
         })
 
         binding.miniPlayerContent.setOnClickListener {
-            expandPlayer()
+            expandMiniPlayer()
         }
 
         binding.btnMiniPlayPause.setOnClickListener {
@@ -359,33 +347,33 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun playOrDownloadResult(result: InlineMusicResult) {
-        val song = Song(
-            id = System.currentTimeMillis(),
-            title = result.title,
-            artist = result.artist,
-            duration = result.duration,
-            path = result.audioUrl,
-            albumArt = result.thumbnailUrl,
-            telegramFileId = result.fileId,
-            chatId = 0,
-            messageId = 0,
-            isDownloaded = false
-        )
-        playSong(song)
-    }
-
-    private fun downloadResult(result: InlineMusicResult) {
+    private fun playOrDownloadResult(result: MusicSearchResult) {
         val song = Song(
             id = System.currentTimeMillis(),
             title = result.title,
             artist = result.artist,
             duration = result.duration,
             path = "",
-            albumArt = result.thumbnailUrl,
+            albumArt = result.albumArt,
             telegramFileId = result.fileId,
-            chatId = 0,
-            messageId = 0,
+            chatId = result.chatId,
+            messageId = result.messageId,
+            isDownloaded = false
+        )
+        playSong(song)
+    }
+
+    private fun downloadResult(result: MusicSearchResult) {
+        val song = Song(
+            id = System.currentTimeMillis(),
+            title = result.title,
+            artist = result.artist,
+            duration = result.duration,
+            path = "",
+            albumArt = result.albumArt,
+            telegramFileId = result.fileId,
+            chatId = result.chatId,
+            messageId = result.messageId,
             isDownloaded = false
         )
 
@@ -438,13 +426,13 @@ class HomeFragment : Fragment() {
 // ===== Adapters =====
 
 class InlineSearchResultAdapter(
-    private val onItemClick: (InlineMusicResult) -> Unit,
-    private val onDownloadClick: (InlineMusicResult) -> Unit
+    private val onItemClick: (MusicSearchResult) -> Unit,
+    private val onDownloadClick: (MusicSearchResult) -> Unit
 ) : RecyclerView.Adapter<InlineSearchResultAdapter.ViewHolder>() {
 
-    private var items: List<InlineMusicResult> = emptyList()
+    private var items: List<MusicSearchResult> = emptyList()
 
-    fun submitList(newItems: List<InlineMusicResult>) {
+    fun submitList(newItems: List<MusicSearchResult>) {
         items = newItems
         notifyDataSetChanged()
     }
@@ -467,13 +455,13 @@ class InlineSearchResultAdapter(
         private val tvDuration: TextView = view.findViewById(R.id.tvDuration)
         private val btnDownload: ImageView = view.findViewById(R.id.btnDownload)
 
-        fun bind(result: InlineMusicResult) {
+        fun bind(result: MusicSearchResult) {
             tvTitle.text = result.title
             tvArtist.text = result.artist
             tvDuration.text = formatDuration(result.duration)
 
             Glide.with(itemView.context)
-                .load(result.thumbnailUrl ?: R.drawable.ic_music_note)
+                .load(result.albumArt ?: R.drawable.ic_music_note)
                 .apply(coverOptions)
                 .into(ivCover)
 
