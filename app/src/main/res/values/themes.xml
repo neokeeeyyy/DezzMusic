@@ -117,7 +117,7 @@
     </style>
 
     <!-- Pixel-style Switch -->
-    <style name="Widget.PixelSwitch" parent="Widget.Material3.MaterialSwitch">
+    <style name="Widget.PixelSwitch" parent="Widget.AppCompat.CompoundButton.Switch">
         <item name="thumbTint">@color/switch_thumb</item>
         <item name="trackTint">@color/switch_track_off</item>
     </style>
@@ -132,7 +132,7 @@
     </style>
 
     <!-- Pixel-style Top App Bar -->
-    <style name="Widget.PixelTopAppBar" parent="Widget.Material3.MaterialToolbar">
+    <style name="Widget.PixelTopAppBar" parent="Widget.Material3.Toolbar">
         <item name="android:background">@color/background_primary</item>
         <item name="titleTextColor">@color/text_primary</item>
         <item name="navigationIconTint">@color/text_primary</item>
