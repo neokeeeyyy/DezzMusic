@@ -1,92 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="150dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="12dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/divider"
+    app:cardBackgroundColor="@color/background_card">
 
-    <data>
-        <variable
-            name="song"
-            type="com.dezzmusic.db.Song" />
-        <variable
-            name="onClick"
-            type="kotlin.Function1<com.dezzmusic.db.Song, Unit>" />
-    </data>
-
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="150dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="12dp"
-        app:cardBackgroundColor="@color/background_card"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="0dp"
-        app:strokeColor="@color/divider"
-        app:strokeWidth="1dp"
-        android:onClick="@{() -> onClick(song)}">
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/ivTrendingCover"
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:scaleType="centerCrop"
+            android:background="@color/background_tertiary"
+            android:contentDescription="@string/album_cover" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="12dp">
 
-            <!-- Cover Art -->
-            <ImageView
-                android:id="@+id/ivTrendingCover"
-                android:layout_width="150dp"
-                android:layout_height="150dp"
-                android:scaleType="centerCrop"
-                android:background="@color/background_tertiary"
-                android:contentDescription="Portada"
-                app:imageUrl="@{song.albumArt}" />
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
-            <!-- Info -->
+            <TextView
+                android:id="@+id/tvArtist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
                 <TextView
-                    android:layout_width="match_parent"
+                    android:id="@+id/tvPlayCount"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@{song.title}"
-                    android:textColor="@color/text_primary"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="10sp"
+                    android:drawableStart="@drawable/ic_recent"
+                    android:drawablePadding="4dp"
+                    android:drawableTint="@color/text_tertiary" />
 
                 <TextView
-                    android:layout_width="match_parent"
+                    android:id="@+id/tvDuration"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@{song.artist}"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@{@string/play_count(song.playCount)}"
-                        android:textColor="@color/text_tertiary"
-                        android:textSize="10sp"
-                        android:drawableStart="@drawable/ic_recent"
-                        android:drawablePadding="4dp"
-                        android:drawableTint="@color/text_tertiary" />
-
-                </LinearLayout>
+                    android:layout_marginStart="12dp"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="10sp" />
 
             </LinearLayout>
 
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
-</layout>
+</com.google.android.material.card.MaterialCardView>

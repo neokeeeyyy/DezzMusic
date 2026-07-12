@@ -21,9 +21,6 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.dezzmusic.R
 import com.dezzmusic.databinding.FragmentHomeBinding
-import com.dezzmusic.databinding.ItemRecentSearchBinding
-import com.dezzmusic.databinding.ItemSearchResultInlineBinding
-import com.dezzmusic.databinding.ItemTrendingCardBinding
 import com.dezzmusic.db.Song
 import com.dezzmusic.telegram.InlineMusicResult
 import com.dezzmusic.telegram.TelegramManager
@@ -35,6 +32,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import java.util.*
+
+private val coverOptions = RequestOptions().transform(RoundedCorners(12)).placeholder(R.drawable.ic_music_note).error(R.drawable.ic_music_note)
 
 class HomeFragment : Fragment() {
 
@@ -53,8 +52,6 @@ class HomeFragment : Fragment() {
 
     private lateinit var miniPlayerBehavior: BottomSheetBehavior<View>
     private var isMiniPlayerExpanded = false
-
-    private val coverOptions = RequestOptions().transform(RoundedCorners(12)).placeholder(R.drawable.ic_music_note).error(R.drawable.ic_music_note)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -453,8 +450,8 @@ class InlineSearchResultAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemSearchResultInlineBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ViewHolder(binding)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_search_result_inline, parent, false)
+        return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -463,18 +460,31 @@ class InlineSearchResultAdapter(
 
     override fun getItemCount() = items.size
 
-    inner class ViewHolder(private val binding: ItemSearchResultInlineBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(result: InlineMusicResult) {
-            binding.result = result
-            binding.onClick = onItemClick
-            binding.onDownloadClick = onDownloadClick
-            binding.executePendingBindings()
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        private val ivCover: ImageView = view.findViewById(R.id.ivResultCover)
+        private val tvTitle: TextView = view.findViewById(R.id.tvTitle)
+        private val tvArtist: TextView = view.findViewById(R.id.tvArtist)
+        private val tvDuration: TextView = view.findViewById(R.id.tvDuration)
+        private val btnDownload: ImageView = view.findViewById(R.id.btnDownload)
 
-            // Load cover with Glide
+        fun bind(result: InlineMusicResult) {
+            tvTitle.text = result.title
+            tvArtist.text = result.artist
+            tvDuration.text = formatDuration(result.duration)
+
             Glide.with(itemView.context)
                 .load(result.thumbnailUrl ?: R.drawable.ic_music_note)
-                .apply(RequestOptions().transform(RoundedCorners(12)).placeholder(R.drawable.ic_music_note).error(R.drawable.ic_music_note))
-                .into(binding.ivResultCover)
+                .apply(coverOptions)
+                .into(ivCover)
+
+            itemView.setOnClickListener { onItemClick(result) }
+            btnDownload.setOnClickListener { onDownloadClick(result) }
+        }
+
+        private fun formatDuration(durationMs: Long): String {
+            val minutes = durationMs / 60000
+            val seconds = (durationMs % 60000) / 1000
+            return String.format("%d:%02d", minutes, seconds)
         }
     }
 }
@@ -492,8 +502,8 @@ class RecentSearchAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemRecentSearchBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ViewHolder(binding)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_recent_search, parent, false)
+        return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -502,12 +512,14 @@ class RecentSearchAdapter(
 
     override fun getItemCount() = items.size
 
-    inner class ViewHolder(private val binding: ItemRecentSearchBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        private val tvQuery: TextView = view.findViewById(R.id.tvQuery)
+        private val btnDelete: ImageView = view.findViewById(R.id.btnDelete)
+
         fun bind(query: String) {
-            binding.query = query
-            binding.onClick = onQueryClick
-            binding.onDeleteClick = onQueryDelete
-            binding.executePendingBindings()
+            tvQuery.text = query
+            itemView.setOnClickListener { onQueryClick(query) }
+            btnDelete.setOnClickListener { onQueryDelete(query) }
         }
     }
 }
@@ -556,8 +568,8 @@ class TrendingAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemTrendingCardBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ViewHolder(binding)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_trending_card, parent, false)
+        return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -566,16 +578,23 @@ class TrendingAdapter(
 
     override fun getItemCount() = items.size
 
-    inner class ViewHolder(private val binding: ItemTrendingCardBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        private val ivCover: ImageView = view.findViewById(R.id.ivTrendingCover)
+        private val tvTitle: TextView = view.findViewById(R.id.tvTitle)
+        private val tvArtist: TextView = view.findViewById(R.id.tvArtist)
+        private val tvPlayCount: TextView = view.findViewById(R.id.tvPlayCount)
+
         fun bind(song: Song) {
-            binding.song = song
-            binding.onClick = onClick
-            binding.executePendingBindings()
+            tvTitle.text = song.title
+            tvArtist.text = song.artist
+            tvPlayCount.text = "${song.playCount} reproducciones"
 
             Glide.with(itemView.context)
                 .load(song.albumArt ?: R.drawable.ic_music_note)
                 .apply(RequestOptions().transform(RoundedCorners(16)).placeholder(R.drawable.ic_music_note).error(R.drawable.ic_music_note))
-                .into(binding.ivTrendingCover)
+                .into(ivCover)
+
+            itemView.setOnClickListener { onClick(song) }
         }
     }
 }

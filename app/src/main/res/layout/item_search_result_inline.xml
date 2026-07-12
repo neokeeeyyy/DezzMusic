@@ -1,113 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
 
-    <data>
-        <variable
-            name="result"
-            type="com.dezzmusic.telegram.InlineMusicResult" />
-        <variable
-            name="onClick"
-            type="kotlin.Function1<com.dezzmusic.telegram.InlineMusicResult, Unit>" />
-        <variable
-            name="onDownloadClick"
-            type="kotlin.Function1<com.dezzmusic.telegram.InlineMusicResult, Unit>" />
-    </data>
+    <ImageView
+        android:id="@+id/ivResultCover"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:scaleType="centerCrop"
+        android:background="@color/background_tertiary"
+        android:contentDescription="@string/album_cover" />
 
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        app:cardBackgroundColor="@color/background_card"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="0dp"
-        app:strokeColor="@color/divider"
-        app:strokeWidth="1dp"
-        android:onClick="@{() -> onClick(result)}">
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:orientation="vertical">
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/tvTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="12dp">
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-            <!-- Cover Art -->
-            <ImageView
-                android:id="@+id/ivResultCover"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:scaleType="centerCrop"
-                android:background="@color/background_tertiary"
-                app:imageUrl="@{result.thumbnailUrl}" />
+        <TextView
+            android:id="@+id/tvArtist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-            <!-- Info -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp"
-                android:orientation="vertical"
-                android:gravity="center_vertical">
+        <TextView
+            android:id="@+id/tvDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/text_tertiary"
+            android:textSize="12sp" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@{result.title}"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
+    </LinearLayout>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@{result.artist}"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@{@string/duration_format(result.duration)}"
-                    android:textColor="@color/text_tertiary"
-                    android:textSize="11sp" />
+        <ImageView
+            android:id="@+id/btnDownload"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_download"
+            android:tint="@color/text_tertiary"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/download"
+            android:padding="8dp" />
 
-            </LinearLayout>
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_play_circle"
+            android:tint="@color/accent_blue"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/play"
+            android:padding="8dp" />
 
-            <!-- Actions -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+    </LinearLayout>
 
-                <ImageView
-                    android:id="@+id/btnDownload"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_download"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Descargar"
-                    android:onClick="@{() -> onDownloadClick(result)}" />
-
-                <ImageView
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/ic_play_circle"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Reproducir" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-</layout>
+</LinearLayout>

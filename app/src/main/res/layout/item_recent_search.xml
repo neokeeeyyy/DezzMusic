@@ -1,69 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="8dp"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/divider"
+    app:strokeWidth="1dp"
+    app:cardBackgroundColor="@color/background_card"
+    android:clickable="true"
+    android:focusable="true">
 
-    <data>
-        <variable
-            name="query"
-            type="String" />
-        <variable
-            name="onClick"
-            type="kotlin.Function1<String, Unit>" />
-        <variable
-            name="onDeleteClick"
-            type="kotlin.Function1<String, Unit>" />
-    </data>
-
-    <com.google.android.material.card.MaterialCardView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="0dp"
-        app:strokeColor="@color/divider"
-        app:strokeWidth="1dp"
-        app:cardBackgroundColor="@color/background_card"
-        android:onClick="@{() -> onClick(query)}">
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_recent"
+            android:tint="@color/text_tertiary"
+            android:layout_marginEnd="12dp"
+            android:importantForAccessibility="no" />
+
+        <TextView
+            android:id="@+id/tvQuery"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="12dp"
-            android:gravity="center_vertical">
+            android:layout_weight="1"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_recent"
-                android:tint="@color/text_tertiary"
-                android:layout_marginEnd="12dp" />
+        <ImageView
+            android:id="@+id/btnDelete"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_close"
+            android:tint="@color/text_tertiary"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/clear"
+            android:padding="8dp" />
 
-            <TextView
-                android:id="@+id/tvQuery"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@{query}"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:maxLines="1"
-                android:ellipsize="end" />
+    </LinearLayout>
 
-            <ImageView
-                android:id="@+id/btnDelete"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_close"
-                android:tint="@color/text_tertiary"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Eliminar"
-                android:onClick="@{() -> onDeleteClick(query)}" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-</layout>
+</com.google.android.material.card.MaterialCardView>

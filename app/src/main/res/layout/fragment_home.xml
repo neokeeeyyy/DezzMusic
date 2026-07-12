@@ -131,7 +131,7 @@
                     android:id="@+id/tvSearchResultsTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Resultados para \"\""
+                    android:text='Resultados para ""'
                     android:textColor="@color/text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold"
