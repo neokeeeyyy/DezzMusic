@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base colors OLED/AMOLED -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- Backgrounds -->
+    <color name="background_primary">#FF000000</color>
+    <color name="background_secondary">#FF0A0A0A</color>
+    <color name="background_tertiary">#FF141414</color>
+    <color name="background_card">#FF1A1A1A</color>
+    <color name="background_card_pressed">#FF242424</color>
+    <color name="background_dialog">#FF1E1E1E</color>
+    <color name="background_bottom_sheet">#FF121212</color>
+    <color name="background_input">#FF0D0D0D</color>
+
+    <!-- Surface colors -->
+    <color name="surface_low">#FF0F0F0F</color>
+    <color name="surface_medium">#FF181818</color>
+    <color name="surface_high">#FF222222</color>
+    <color name="surface_overlay">#33FFFFFF</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#B3FFFFFF</color>
+    <color name="text_tertiary">#66FFFFFF</color>
+    <color name="text_disabled">#33FFFFFF</color>
+    <color name="text_hint">#80FFFFFF</color>
+
+    <!-- Accent colors (Pixel style) -->
+    <color name="accent_blue">#FF8AB4F8</color>
+    <color name="accent_blue_dark">#FF4285F4</color>
+    <color name="accent_green">#FF81C995</color>
+    <color name="accent_red">#FFFC886A</color>
+    <color name="accent_yellow">#FFFDD663</color>
+    <color name="accent_purple">#FFC58AF9</color>
+    <color name="accent_cyan">#FF78D9EC</color>
+    <color name="accent_orange">#FFFCAD70</color>
+
+    <!-- Divider -->
+    <color name="divider">#1AFFFFFF</color>
+    <color name="divider_strong">#33FFFFFF</color>
+
+    <!-- Ripple -->
+    <color name="ripple">#1AFFFFFF</color>
+    <color name="ripple_accent">#1A8AB4F8</color>
+
+    <!-- Status bar -->
+    <color name="status_bar">#FF000000</color>
+    <color name="navigation_bar">#FF000000</color>
+
+    <!-- Player colors -->
+    <color name="player_progress">#FF8AB4F8</color>
+    <color name="player_progress_background">#33FFFFFF</color>
+    <color name="player_background">#FF000000</color>
+
+    <!-- Tab colors -->
+    <color name="tab_selected">#FFFFFFFF</color>
+    <color name="tab_unselected">#66FFFFFF</color>
+
+    <!-- Switch/Toggle -->
+    <color name="switch_track_on">#FF8AB4F8</color>
+    <color name="switch_track_off">#33FFFFFF</color>
+    <color name="switch_thumb">#FFFFFFFF</color>
+
+    <!-- Bottom navigation -->
+    <color name="bottom_nav_background">#FF0A0A0A</color>
+    <color name="bottom_nav_selected">#FFFFFFFF</color>
+    <color name="bottom_nav_unselected">#66FFFFFF</color>
+</resources>
