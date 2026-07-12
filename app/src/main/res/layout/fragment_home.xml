@@ -268,12 +268,12 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="24dp"
-                        android:text="@deezload2bot"
+                        android:text="Buscar en @deezload2bot"
                         android:textColor="@color/black"
                         style="@style/Widget.PixelButton"
-                        android:icon="@drawable/ic_bot"
-                        android:iconGravity="start"
-                        android:iconPadding="8dp" />
+                        app:icon="@drawable/ic_bot"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp" />
 
                 </LinearLayout>
 
