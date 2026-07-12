@@ -19,7 +19,7 @@ class CoverFlowView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private var items: List<CoverFlowItem> = emptyList()
-    private var currentIndex = 0
+    private var currentIndex = 0f
     private var scrollX = 0f
     private var lastTouchX = 0f
     private var isDragging = false

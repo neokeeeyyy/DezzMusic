@@ -137,10 +137,10 @@ class TelegramManager private constructor(private val context: Context) {
     fun isLoggedIn(): Boolean = isAuthenticated
 }
 
-enum class LoginResult {
-    CodeSent,
-    Success,
-    Error
+sealed class LoginResult {
+    object CodeSent : LoginResult()
+    object Success : LoginResult()
+    data class Error(val message: String) : LoginResult()
 }
 
 data class MusicSearchResult(
