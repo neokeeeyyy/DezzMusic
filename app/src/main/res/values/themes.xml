@@ -147,7 +147,7 @@
     </style>
 
     <!-- Chip Text Style -->
-    <style name="ChipTextStyle" parent="TextAppearance.Material3.Chip">
+    <style name="ChipTextStyle">
         <item name="android:textSize">13sp</item>
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:fontFamily">sans-serif-medium</item>
