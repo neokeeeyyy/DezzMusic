@@ -50,7 +50,6 @@
 
         <!-- Fonts -->
         <item name="android:fontFamily">sans-serif</item>
-        <item name="android:textSizePrimary">16sp</item>
     </style>
 
     <!-- Splash theme -->
@@ -59,29 +58,23 @@
     </style>
 
     <!-- Pixel-style shapes -->
-    <style name="ShapeSmall" parent="">
+    <style name="ShapeSmall" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSizeSmall">8dp</item>
-        <item name="cornerSizeMedium">8dp</item>
-        <item name="cornerSizeLarge">8dp</item>
+        <item name="cornerSize">8dp</item>
     </style>
 
-    <style name="ShapeMedium" parent="">
+    <style name="ShapeMedium" parent="ShapeAppearance.Material3.MediumComponent">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSizeSmall">12dp</item>
-        <item name="cornerSizeMedium">12dp</item>
-        <item name="cornerSizeLarge">12dp</item>
+        <item name="cornerSize">12dp</item>
     </style>
 
-    <style name="ShapeLarge" parent="">
+    <style name="ShapeLarge" parent="ShapeAppearance.Material3.LargeComponent">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSizeSmall">16dp</item>
-        <item name="cornerSizeMedium">16dp</item>
-        <item name="cornerSizeLarge">16dp</item>
+        <item name="cornerSize">16dp</item>
     </style>
 
     <!-- Pixel-style Card -->
-    <style name="Widget.PixelCard" parent="MaterialCardView">
+    <style name="Widget.PixelCard" parent="Widget.Material3.CardView.Filled">
         <item name="cardBackgroundColor">@color/background_card</item>
         <item name="cardCornerRadius">16dp</item>
         <item name="cardElevation">0dp</item>
@@ -124,7 +117,7 @@
     </style>
 
     <!-- Pixel-style Switch -->
-    <style name="Widget.PixelSwitch" parent="Widget.Material3.Switch">
+    <style name="Widget.PixelSwitch" parent="Widget.Material3.MaterialSwitch">
         <item name="thumbTint">@color/switch_thumb</item>
         <item name="trackTint">@color/switch_track_off</item>
     </style>
@@ -139,7 +132,7 @@
     </style>
 
     <!-- Pixel-style Top App Bar -->
-    <style name="Widget.PixelTopAppBar" parent="Widget.Material3.TopAppBar">
+    <style name="Widget.PixelTopAppBar" parent="Widget.Material3.MaterialToolbar">
         <item name="android:background">@color/background_primary</item>
         <item name="titleTextColor">@color/text_primary</item>
         <item name="navigationIconTint">@color/text_primary</item>
